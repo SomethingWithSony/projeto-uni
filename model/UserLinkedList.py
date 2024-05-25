@@ -39,7 +39,7 @@ class UserLinkedList(List):
             node = node.get_next_node()
             posicao += 1
         return -1
-     
+
     def find_username(self, username):
         node = self.head
         posicao = 0
@@ -49,7 +49,7 @@ class UserLinkedList(List):
             node = node.get_next_node()
             posicao += 1
         return -1
-    
+
     def insert(self, elemento, posicao):
         if posicao < 0 or posicao > self.size:
             raise Exception("Posição inválida")
@@ -65,7 +65,7 @@ class UserLinkedList(List):
             node.set_next_node(new_node)
             self.size += 1
 
-            
+
     def insert_first(self, elemento):
         node = SingleListNode(elemento, self.head)
         self.head = node
@@ -82,7 +82,7 @@ class UserLinkedList(List):
             node.set_next_node(new_node)
             self.size += 1
 
-    
+
     def remove_first(self):
         if self.head is None:
             raise Exception("Lista vazia")
