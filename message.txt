@@ -1,0 +1,214 @@
+"""
+Get token - serve para apanhar o token da app que criamos so website devspotify
+esta expira a cada 3600 segundos (1H)
+
+Basicamente faz um requeste a api pelo token caso os dados sejam validos a mesma
+devolve o token com duração 1H.
+
+fazemos um post request ao api junto com os dados necessarios 
+o qual nos devolve o resultado em formato json , no qual caso tenha sido 
+positivo , retiramos do dicionario o que nos interessa o token
+"""
+def get_token(self):
+        #
+        client_id = "53a1118785cb49d283af6768eaa464db"
+        client_secret  = "0dc62adaafea4890a9af11152113aca3" 
+
+        auth_string = client_id + ":" + client_secret 
+        auth_bytes = auth_string.encode("utf-8")
+        auth_base64 = str(base64.b64encode(auth_bytes), "utf-8")
+        url = "https://accounts.spotify.com/api/token"
+        headers = {
+            "Authorization": "Basic " + auth_base64,
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {"grant_type": "client_credentials"}
+        result = post(url, headers=headers, data=data)
+        json_result = json.loads(result.content)
+        token = json_result["access_token"]
+        return token
+
+
+    def obter_header(self):
+        return {"Authorization": "Bearer " + self.token}
+
+
+# o que é uma variavel global -> como temos aqui vale a pena saber explicar 
+
+    def procurar_e_exibir_faixas(self):
+        global preview_url
+        nome_faixa = self.searchbar.get()
+        faixas = self.procurar_faixa(nome_faixa)
+        self.listbox.delete(0, tk.END)
+        for faixa in faixas:
+            self.listbox.insert(tk.END, (faixa['name'], faixa['artists'][0]['name'], faixa['id']))
+        print("procura bem sucedida")
+
+    def adicionar_faixa_a_lista(self):
+        faixa_selecionada = self.listbox.curselection()
+        if faixa_selecionada:
+            faixa = self.listbox.get(faixa_selecionada)
+            self.listbox_queue.insert(tk.END, faixa)
+            # self.atualizar_playlist()
+            messagebox.showinfo("Informação", "Faixa adicionada à fila.")
+
+    def remover_faixa_da_lista(self):
+        faixa_selecionada = self.listbox_queue.curselection()
+        if faixa_selecionada:
+            self.listbox_queue.delete(faixa_selecionada)
+            # self.atualizar_playlist()
+            messagebox.showinfo("Informação", "Faixa removida da fila.")
+
+    # Utilizamos pygame para reproduzir as nossas musicas, criamos um sistema simples para controlar os seus estados
+    # pausado, reproduzindo, init 
+    # as seguintes funçoes simplesmente alteram o estado e decidem o que fazer consoante o estado da musicas
+    # se estiver pauasado e dermos play reproduz, se estiver a reproduzir musica e acionarmos a funçao ela pausado
+
+    # review estas duas funçoes poderiam ser somente 1 na qual a ação a ser realizada seria escolhida atraves de uma verificação do estado atualizar_barra_progresso
+    de reprodução 
+
+    def pausar_preview(self):
+        pygame.mixer.music.pause()
+        self.estado_reproducao = "pausado"
+        self.botao_reproduzir.config(text="Continuar")
+
+    def continuar_preview(self):
+        pygame.mixer.music.unpause()
+        self.estado_reproducao = "reproduzindo"
+        self.botao_reproduzir.config(text="Pausar")
+
+    def alternar_reproducao_pausa(self):
+        if self.estado_reproducao == "reproduzindo":
+            self.pausar_preview()
+        elif self.estado_reproducao == "pausado":
+            self.continuar_preview()
+        elif self.estado_reproducao == "init":
+            pygame.mixer.music.play()
+            self.estado_reproducao = "reproduzindo"
+            self.atualizar_barra_progresso()
+            self.botao_reproduzir.config(text="Pausar")
+        else:
+            faixa_selecionada = self.listbox_queue.curselection()
+            if faixa_selecionada:
+                faixa = self.listbox_queue.get(faixa_selecionada)
+                faixa_id = faixa[2]
+                preview_url = self.obter_preview_faixa(faixa_id)
+                self.tocar_preview(preview_url)
+                pygame.mixer.music.play()
+                self.estado_reproducao = "reproduzindo"
+                self.atualizar_barra_progresso()
+                self.botao_reproduzir.config(text="Pausar")
+
+    def proxima_faixa(self):
+        faixa_selecionada = self.listbox_queue.curselection()
+        if faixa_selecionada:
+            proximo_indice = (faixa_selecionada[0] + 1) % self.listbox_queue.size()
+            self.listbox_queue.select_clear(0, tk.END)
+            self.listbox_queue.select_set(proximo_indice)
+            self.listbox_queue.event_generate("<<ListboxSelect>>")
+            faixa = self.listbox_queue.get(proximo_indice)
+            faixa_id = faixa[2]
+            preview_url = self.obter_preview_faixa(faixa_id)
+            self.tocar_preview(preview_url)
+            pygame.mixer.music.play()
+            self.estado_reproducao = "reproduzindo"
+            self.atualizar_barra_progresso()
+            self.botao_reproduzir.config(text="Pausar")
+
+    def faixa_anterior(self):
+        faixa_selecionada = self.listbox_queue.curselection()
+        if faixa_selecionada:
+            indice_anterior = (faixa_selecionada[0] - 1) % self.listbox_queue.size()
+            self.listbox_queue.select_clear(0, tk.END)
+            self.listbox_queue.select_set(indice_anterior)
+            self.listbox_queue.event_generate("<<ListboxSelect>>")
+            faixa = self.listbox_queue.get(indice_anterior)
+            faixa_id = faixa[2]
+            preview_url = self.obter_preview_faixa(faixa_id)
+            self.tocar_preview(preview_url)
+            pygame.mixer.music.play()
+            self.estado_reproducao = "reproduzindo"
+            self.atualizar_barra_progresso()
+            self.botao_reproduzir.config(text="Pausar")
+
+    def verificar_estado_reproducao(self):
+        if self.estado_reproducao == "reproduzindo" and not pygame.mixer.music.get_busy():
+            self.estado_reproducao = "parado"
+            self.botao_reproduzir.config(text="Reproduzir")
+            self.proxima_faixa()
+        self.master.after(1000, self.verificar_self.estado_reproducao)
+
+    def atualizar_barra_progresso(self):
+        if self.estado_reproducao == "reproduzindo":
+            tempo_atual = pygame.mixer.music.get_pos() / 1000
+            self.variavel_progresso.set(tempo_atual / duracao_faixa * 100)
+            self.etiqueta_tempo.config(text=f"{self.formatar_tempo(tempo_atual)} / {self.formatar_tempo(duracao_faixa)}")
+        if self.estado_reproducao != "parado":
+            self.master.after(1000, self.atualizar_barra_progresso)
+
+
+    def formatar_tempo(self,segundos):
+        mins, segs = divmod(segundos, 60)
+        return f"{int(mins):02}:{int(segs):02}"
+
+    def procurar(self,event):
+        if self.estado_reproducao in ["reproduzindo", "pausado"]:
+            x = event.x
+            largura_barra_progresso = self.barra_progresso.winfo_width()
+            novo_tempo = (x / largura_barra_progresso) * duracao_faixa
+            pygame.mixer.music.play(start=novo_tempo)
+            if self.estado_reproducao == "pausado":
+                pygame.mixer.music.pause()
+
+
+    # procurar musica atraves do nome
+    def procurar_faixa(self, nome):
+        url = f'https://api.spotify.com/v1/search'
+        headers = self.obter_header()
+        query = f"?q={nome}&type=track&limit=10"
+        query_url = url + query
+        resultado = get(query_url, headers=headers)
+        resultado_json = json.loads(resultado.content)
+        if 'tracks' in resultado_json and 'items' in resultado_json['tracks'] and resultado_json['tracks']['items']:
+            faixas = resultado_json['tracks']['items']
+            return faixas
+        else:
+            messagebox.showerror("Erro", "Nenhuma faixa encontrada com este nome.")
+            return []
+    
+    # fazer o rquest da preview da musica
+    def obter_preview_faixa(self, faixa_id):
+        url = f"https://api.spotify.com/v1/tracks/{faixa_id}"
+        headers = self.obter_header()
+        resultado = get(url, headers=headers)
+        resultado_json = json.loads(resultado.content)
+        preview_url = resultado_json['preview_url']
+        return preview_url
+
+    def tocar_preview(self, preview_url):
+        global temp_file, duracao_faixa
+        if preview_url:
+            try:
+
+                diretorio_temporario = os.path.join(os.getcwd(), "musicas") 
+
+                # criar uma pasta para guardar o ficheiro das musicas caso nao exista
+                if not os.path.exists(diretorio_temporario):
+                    os.makedirs(diretorio_temporario)
+
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3", dir=diretorio_temporario)
+                caminho_arquivo_temp = temp_file.name
+
+                # Basicamente baixar a musica 
+                with urllib.request.urlopen(preview_url) as response:
+                    with open(caminho_arquivo_temp, 'wb') as temp_file:
+                        shutil.copyfileobj(response, temp_file)
+                # Dar load na musica no pygame
+                pygame.mixer.music.load(temp_file.name)
+                # Apanhar a duracao do ficheiro mp3
+                duracao_faixa = pygame.mixer.Sound(temp_file.name).get_length()
+                self.estado_reproducao = "init" # atualizar  estado de reprodução inicial
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao reproduzir a faixa: {e}")
+        else:
+            messagebox.showinfo("Informação", "Nenhum preview disponível para esta faixa.")

@@ -5,6 +5,7 @@ class UserLinkedList(List):
     def __init__(self):
         self.head = None
         self.size = 0
+
     def is_empty(self):
         return self.head is None
     def size(self):
@@ -44,7 +45,7 @@ class UserLinkedList(List):
         node = self.head
         posicao = 0
         while node is not None:
-            if node.get_element().get_nome() == username:
+            if node.get_element().get_username() == username:
                 return posicao
             node = node.get_next_node()
             posicao += 1

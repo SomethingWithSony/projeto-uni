@@ -21,4 +21,4 @@ class TwoWayIterador(Iterator):
             '''retorna o elemeto diretamente atras da iteraçao'''
     @abstractmethod
     def full_forward(self):
-            pass
+            pass        
